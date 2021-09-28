@@ -4,69 +4,68 @@ import java.util.Set;
 
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import net.minecraft.network.IPacket;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.PacketDirection;
-import net.minecraft.network.play.ServerPlayNetHandler;
-import net.minecraft.network.play.client.CAnimateHandPacket;
-import net.minecraft.network.play.client.CChatMessagePacket;
-import net.minecraft.network.play.client.CClickWindowPacket;
-import net.minecraft.network.play.client.CClientSettingsPacket;
-import net.minecraft.network.play.client.CClientStatusPacket;
-import net.minecraft.network.play.client.CCloseWindowPacket;
-import net.minecraft.network.play.client.CConfirmTeleportPacket;
-import net.minecraft.network.play.client.CConfirmTransactionPacket;
-import net.minecraft.network.play.client.CCreativeInventoryActionPacket;
-import net.minecraft.network.play.client.CCustomPayloadPacket;
-import net.minecraft.network.play.client.CEditBookPacket;
-import net.minecraft.network.play.client.CEnchantItemPacket;
-import net.minecraft.network.play.client.CEntityActionPacket;
-import net.minecraft.network.play.client.CHeldItemChangePacket;
-import net.minecraft.network.play.client.CInputPacket;
-import net.minecraft.network.play.client.CKeepAlivePacket;
-import net.minecraft.network.play.client.CLockDifficultyPacket;
-import net.minecraft.network.play.client.CMarkRecipeSeenPacket;
-import net.minecraft.network.play.client.CMoveVehiclePacket;
-import net.minecraft.network.play.client.CPickItemPacket;
-import net.minecraft.network.play.client.CPlaceRecipePacket;
-import net.minecraft.network.play.client.CPlayerAbilitiesPacket;
-import net.minecraft.network.play.client.CPlayerDiggingPacket;
-import net.minecraft.network.play.client.CPlayerPacket;
-import net.minecraft.network.play.client.CPlayerTryUseItemOnBlockPacket;
-import net.minecraft.network.play.client.CPlayerTryUseItemPacket;
-import net.minecraft.network.play.client.CQueryEntityNBTPacket;
-import net.minecraft.network.play.client.CQueryTileEntityNBTPacket;
-import net.minecraft.network.play.client.CRenameItemPacket;
-import net.minecraft.network.play.client.CResourcePackStatusPacket;
-import net.minecraft.network.play.client.CSeenAdvancementsPacket;
-import net.minecraft.network.play.client.CSelectTradePacket;
-import net.minecraft.network.play.client.CSetDifficultyPacket;
-import net.minecraft.network.play.client.CSpectatePacket;
-import net.minecraft.network.play.client.CSteerBoatPacket;
-import net.minecraft.network.play.client.CTabCompletePacket;
-import net.minecraft.network.play.client.CUpdateBeaconPacket;
-import net.minecraft.network.play.client.CUpdateCommandBlockPacket;
-import net.minecraft.network.play.client.CUpdateJigsawBlockPacket;
-import net.minecraft.network.play.client.CUpdateMinecartCommandBlockPacket;
-import net.minecraft.network.play.client.CUpdateSignPacket;
-import net.minecraft.network.play.client.CUpdateStructureBlockPacket;
-import net.minecraft.network.play.client.CUseEntityPacket;
-import net.minecraft.network.play.server.SPlayerPositionLookPacket.Flags;
-import net.minecraft.util.text.ITextComponent;
+import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket.RelativeArgument;
+import net.minecraft.network.protocol.game.ServerboundAcceptTeleportationPacket;
+import net.minecraft.network.protocol.game.ServerboundBlockEntityTagQuery;
+import net.minecraft.network.protocol.game.ServerboundChangeDifficultyPacket;
+import net.minecraft.network.protocol.game.ServerboundChatPacket;
+import net.minecraft.network.protocol.game.ServerboundClientCommandPacket;
+import net.minecraft.network.protocol.game.ServerboundClientInformationPacket;
+import net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerButtonClickPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.network.protocol.game.ServerboundCustomPayloadPacket;
+import net.minecraft.network.protocol.game.ServerboundEditBookPacket;
+import net.minecraft.network.protocol.game.ServerboundEntityTagQuery;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.network.protocol.game.ServerboundKeepAlivePacket;
+import net.minecraft.network.protocol.game.ServerboundLockDifficultyPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.network.protocol.game.ServerboundMoveVehiclePacket;
+import net.minecraft.network.protocol.game.ServerboundPaddleBoatPacket;
+import net.minecraft.network.protocol.game.ServerboundPickItemPacket;
+import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerAbilitiesPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket;
+import net.minecraft.network.protocol.game.ServerboundPlayerInputPacket;
+import net.minecraft.network.protocol.game.ServerboundRecipeBookSeenRecipePacket;
+import net.minecraft.network.protocol.game.ServerboundRenameItemPacket;
+import net.minecraft.network.protocol.game.ServerboundResourcePackPacket;
+import net.minecraft.network.protocol.game.ServerboundSeenAdvancementsPacket;
+import net.minecraft.network.protocol.game.ServerboundSelectTradePacket;
+import net.minecraft.network.protocol.game.ServerboundSetBeaconPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCommandBlockPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
+import net.minecraft.network.protocol.game.ServerboundSetJigsawBlockPacket;
+import net.minecraft.network.protocol.game.ServerboundSetStructureBlockPacket;
+import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
+import net.minecraft.network.protocol.game.ServerboundSwingPacket;
+import net.minecraft.network.protocol.game.ServerboundTeleportToEntityPacket;
+import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
+import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraftforge.common.util.FakePlayer;
 
-public class NetHandlerSpaghettiServer extends ServerPlayNetHandler {
+public class NetHandlerSpaghettiServer extends ServerGamePacketListenerImpl {
 
 	public NetHandlerSpaghettiServer(FakePlayer player) {
-		super(null, new NetworkManager(PacketDirection.CLIENTBOUND), player);
+		super(null, new Connection(PacketFlow.CLIENTBOUND), player);
 	}
 
 	@Override
-	public void disconnect(ITextComponent textComponent) {
+	public void disconnect(Component textComponent) {
 	}
 
 	@Override
-	public void onDisconnect(ITextComponent reason) {
+	public void onDisconnect(Component reason) {
 	}
 
 	@Override
@@ -74,187 +73,183 @@ public class NetHandlerSpaghettiServer extends ServerPlayNetHandler {
 	}
 
 	@Override
-	public void handleLockDifficulty(CLockDifficultyPacket p_217261_1_) {
+	public void handleLockDifficulty(ServerboundLockDifficultyPacket p_217261_1_) {
 	}
 
 	@Override
-	public void handleChangeDifficulty(CSetDifficultyPacket p_217263_1_) {
+	public void handleChangeDifficulty(ServerboundChangeDifficultyPacket p_217263_1_) {
 	}
 
 	@Override
-	public void handleSetJigsawBlock(CUpdateJigsawBlockPacket p_217262_1_) {
+	public void handleSetJigsawBlock(ServerboundSetJigsawBlockPacket p_217262_1_) {
 	}
 
 	@Override
-	public void handleAnimate(CAnimateHandPacket packetIn) {
+	public void handleAnimate(ServerboundSwingPacket packetIn) {
 	}
 
 	@Override
-	public void handleClientCommand(CClientStatusPacket packetIn) {
+	public void handleClientCommand(ServerboundClientCommandPacket packetIn) {
 	}
 
 	@Override
-	public void handleMovePlayer(CPlayerPacket packetIn) {
+	public void handleMovePlayer(ServerboundMovePlayerPacket packetIn) {
 	}
 
 	@Override
-	public void handleContainerButtonClick(CEnchantItemPacket packetIn) {
+	public void handleContainerButtonClick(ServerboundContainerButtonClickPacket packetIn) {
 	}
 
 	@Override
-	public void handleContainerClose(CCloseWindowPacket packetIn) {
+	public void handleContainerClose(ServerboundContainerClosePacket packetIn) {
 	}
 
 	@Override
-	public void handleSeenAdvancements(CSeenAdvancementsPacket packetIn) {
+	public void handleSeenAdvancements(ServerboundSeenAdvancementsPacket packetIn) {
 	}
 
 	@Override
-	public void handleMoveVehicle(CMoveVehiclePacket packetIn) {
+	public void handleMoveVehicle(ServerboundMoveVehiclePacket packetIn) {
 	}
 
 	@Override
-	public void handleRecipeBookSeenRecipePacket(CMarkRecipeSeenPacket packetIn) {
+	public void handleRecipeBookSeenRecipePacket(ServerboundRecipeBookSeenRecipePacket packetIn) {
 	}
 
 	@Override
-	public void handleResourcePackResponse(CResourcePackStatusPacket packetIn) {
+	public void handleResourcePackResponse(ServerboundResourcePackPacket packetIn) {
 	}
 
 	@Override
-	public void handleChat(CChatMessagePacket packetIn) {
+	public void handleChat(ServerboundChatPacket packetIn) {
 	}
 
 	@Override
-	public void handleTeleportToEntityPacket(CSpectatePacket packetIn) {
+	public void handleTeleportToEntityPacket(ServerboundTeleportToEntityPacket packetIn) {
 	}
 
 	@Override
-	public void handleClientInformation(CClientSettingsPacket packetIn) {
+	public void handleClientInformation(ServerboundClientInformationPacket packetIn) {
 	}
 
 	@Override
-	public void handleContainerClick(CClickWindowPacket packetIn) {
+	public void handleContainerClick(ServerboundContainerClickPacket packetIn) {
 	}
 
 	@Override
-	public void handleCustomPayload(CCustomPayloadPacket packetIn) {
+	public void handleCustomPayload(ServerboundCustomPayloadPacket packetIn) {
 	}
 
 	@Override
-	public void handleSetCreativeModeSlot(CCreativeInventoryActionPacket packetIn) {
+	public void handleSetCreativeModeSlot(ServerboundSetCreativeModeSlotPacket packetIn) {
 	}
 
 	@Override
-	public void handleAcceptTeleportPacket(CConfirmTeleportPacket packetIn) {
+	public void handleAcceptTeleportPacket(ServerboundAcceptTeleportationPacket packetIn) {
 	}
 
 	@Override
-	public void handlePlayerCommand(CEntityActionPacket packetIn) {
+	public void handlePlayerCommand(ServerboundPlayerCommandPacket packetIn) {
 	}
 
 	@Override
-	public void handleContainerAck(CConfirmTransactionPacket packetIn) {
+	public void handlePlayerInput(ServerboundPlayerInputPacket packetIn) {
 	}
 
 	@Override
-	public void handlePlayerInput(CInputPacket packetIn) {
+	public void handleEditBook(ServerboundEditBookPacket packetIn) {
 	}
 
 	@Override
-	public void handleEditBook(CEditBookPacket packetIn) {
+	public void handleBlockEntityTagQuery(ServerboundBlockEntityTagQuery packetIn) {
 	}
 
 	@Override
-	public void handleBlockEntityTagQuery(CQueryTileEntityNBTPacket packetIn) {
+	public void handleSetCarriedItem(ServerboundSetCarriedItemPacket packetIn) {
 	}
 
 	@Override
-	public void handleSetCarriedItem(CHeldItemChangePacket packetIn) {
+	public void handlePlaceRecipe(ServerboundPlaceRecipePacket packetIn) {
 	}
 
 	@Override
-	public void handlePlaceRecipe(CPlaceRecipePacket packetIn) {
+	public void handleKeepAlive(ServerboundKeepAlivePacket packetIn) {
 	}
 
 	@Override
-	public void handleKeepAlive(CKeepAlivePacket packetIn) {
+	public void handlePlayerAction(ServerboundPlayerActionPacket packetIn) {
 	}
 
 	@Override
-	public void handlePlayerAction(CPlayerDiggingPacket packetIn) {
+	public void handleEntityTagQuery(ServerboundEntityTagQuery packetIn) {
 	}
 
 	@Override
-	public void handleEntityTagQuery(CQueryEntityNBTPacket packetIn) {
+	public void handleSelectTrade(ServerboundSelectTradePacket packetIn) {
 	}
 
 	@Override
-	public void handleSelectTrade(CSelectTradePacket packetIn) {
+	public void handlePickItem(ServerboundPickItemPacket packetIn) {
 	}
 
 	@Override
-	public void handlePickItem(CPickItemPacket packetIn) {
+	public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packetIn) {
 	}
 
 	@Override
-	public void handleCustomCommandSuggestions(CTabCompletePacket packetIn) {
+	public void handlePlayerAbilities(ServerboundPlayerAbilitiesPacket packetIn) {
 	}
 
 	@Override
-	public void handlePlayerAbilities(CPlayerAbilitiesPacket packetIn) {
+	public void handleUseItemOn(ServerboundUseItemOnPacket packetIn) {
 	}
 
 	@Override
-	public void handleUseItemOn(CPlayerTryUseItemOnBlockPacket packetIn) {
+	public void handlePaddleBoat(ServerboundPaddleBoatPacket packetIn) {
 	}
 
 	@Override
-	public void handlePaddleBoat(CSteerBoatPacket packetIn) {
+	public void handleSetCommandBlock(ServerboundSetCommandBlockPacket packetIn) {
 	}
 
 	@Override
-	public void handleSetCommandBlock(CUpdateCommandBlockPacket packetIn) {
+	public void handleRenameItem(ServerboundRenameItemPacket packetIn) {
 	}
 
 	@Override
-	public void handleRenameItem(CRenameItemPacket packetIn) {
+	public void handleSignUpdate(ServerboundSignUpdatePacket packetIn) {
 	}
 
 	@Override
-	public void handleSignUpdate(CUpdateSignPacket packetIn) {
+	public void handleUseItem(ServerboundUseItemPacket packetIn) {
 	}
 
 	@Override
-	public void handleUseItem(CPlayerTryUseItemPacket packetIn) {
+	public void handleInteract(ServerboundInteractPacket packetIn) {
 	}
 
 	@Override
-	public void handleInteract(CUseEntityPacket packetIn) {
+	public void handleSetCommandMinecart(ServerboundSetCommandMinecartPacket packetIn) {
 	}
 
 	@Override
-	public void handleSetCommandMinecart(CUpdateMinecartCommandBlockPacket packetIn) {
+	public void handleSetStructureBlock(ServerboundSetStructureBlockPacket packetIn) {
 	}
 
 	@Override
-	public void handleSetStructureBlock(CUpdateStructureBlockPacket packetIn) {
+	public void handleSetBeaconPacket(ServerboundSetBeaconPacket packetIn) {
 	}
 
 	@Override
-	public void handleSetBeaconPacket(CUpdateBeaconPacket packetIn) {
+	public void send(Packet<?> packetIn, GenericFutureListener<? extends Future<? super Void>> futureListeners) {
 	}
 
 	@Override
-	public void send(IPacket<?> packetIn, GenericFutureListener<? extends Future<? super Void>> futureListeners) {
+	public void teleport(double x, double y, double z, float yaw, float pitch, Set<RelativeArgument> relativeSet) {
 	}
 
 	@Override
-	public void teleport(double x, double y, double z, float yaw, float pitch, Set<Flags> relativeSet) {
-	}
-
-	@Override
-	public void send(IPacket<?> packetIn) {
+	public void send(Packet<?> packetIn) {
 	}
 
 	@Override

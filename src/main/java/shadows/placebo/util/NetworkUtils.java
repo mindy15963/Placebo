@@ -4,23 +4,23 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.server.ServerWorld;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkEvent;
-import net.minecraftforge.fml.network.PacketDistributor;
-import net.minecraftforge.fml.network.simple.SimpleChannel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraftforge.fmllegacy.network.NetworkDirection;
+import net.minecraftforge.fmllegacy.network.NetworkEvent;
+import net.minecraftforge.fmllegacy.network.PacketDistributor;
+import net.minecraftforge.fmllegacy.network.simple.SimpleChannel;
 
 public class NetworkUtils {
 
 	/**
 	 * Helper message to send a packet to all players watching a chunk.
 	 */
-	public static void sendToTracking(SimpleChannel channel, Object packet, ServerWorld world, BlockPos pos) {
+	public static void sendToTracking(SimpleChannel channel, Object packet, ServerLevel world, BlockPos pos) {
 		world.getChunkSource().chunkMap.getPlayers(new ChunkPos(pos), false).forEach(p -> {
 			channel.sendTo(packet, p.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
 		});
@@ -29,8 +29,8 @@ public class NetworkUtils {
 	/**
 	 * Helper message to send a packet to all players watching a chunk.
 	 */
-	public static void sendTo(SimpleChannel channel, Object packet, PlayerEntity player) {
-		channel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) player), packet);
+	public static void sendTo(SimpleChannel channel, Object packet, Player player) {
+		channel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), packet);
 	}
 
 	/**
@@ -42,7 +42,7 @@ public class NetworkUtils {
 	 * @param decoder Method to read the message from buf.
 	 * @param messageConsumer Executor for the read message.
 	 */
-	public static <MSG> void registerMessage(SimpleChannel channel, int id, Class<MSG> messageType, BiConsumer<MSG, PacketBuffer> encoder, Function<PacketBuffer, MSG> decoder, BiConsumer<MSG, Supplier<NetworkEvent.Context>> messageConsumer) {
+	public static <MSG> void registerMessage(SimpleChannel channel, int id, Class<MSG> messageType, BiConsumer<MSG, FriendlyByteBuf> encoder, Function<FriendlyByteBuf, MSG> decoder, BiConsumer<MSG, Supplier<NetworkEvent.Context>> messageConsumer) {
 		channel.registerMessage(id, messageType, encoder, decoder, messageConsumer);
 	}
 
@@ -69,9 +69,9 @@ public class NetworkUtils {
 			return (Class<T>) this.getClass();
 		}
 
-		public abstract void write(T msg, PacketBuffer buf);
+		public abstract void write(T msg, FriendlyByteBuf buf);
 
-		public abstract T read(PacketBuffer buf);
+		public abstract T read(FriendlyByteBuf buf);
 
 		public abstract void handle(T msg, Supplier<NetworkEvent.Context> ctx);
 	}

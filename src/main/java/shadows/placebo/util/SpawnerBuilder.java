@@ -1,17 +1,18 @@
 package shadows.placebo.util;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.tileentity.MobSpawnerTileEntity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.WeightedSpawnerEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IWorld;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.SpawnData;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.util.Constants.NBT;
 
 /**
@@ -32,17 +33,17 @@ public class SpawnerBuilder {
 	public static final String SPAWN_RANGE = "SpawnRange";
 	public static final String ID = "id";
 	public static final String ENTITY = "Entity"; //WeightedSpawnerEntity's internal entity tag
-	public static final CompoundNBT BASE_TAG;
+	public static final CompoundTag BASE_TAG;
 	static {
-		MobSpawnerTileEntity te = (MobSpawnerTileEntity) Blocks.SPAWNER.createTileEntity(null, null);
+		SpawnerBlockEntity te = (SpawnerBlockEntity) ((EntityBlock) Blocks.SPAWNER).newBlockEntity(null, null);
 		te.getSpawner().setEntityId(EntityType.PIG);
-		BASE_TAG = te.save(new CompoundNBT());
+		BASE_TAG = te.save(new CompoundTag());
 		BASE_TAG.getList(SPAWN_POTENTIALS, NBT.TAG_COMPOUND).clear();
 	}
 
-	CompoundNBT tag = BASE_TAG.copy();
+	CompoundTag tag = BASE_TAG.copy();
 	boolean hasPotentials = false;
-	WeightedSpawnerEntity baseEntity = new WeightedSpawnerEntity();
+	SpawnData baseEntity = new SpawnData();
 
 	public SpawnerBuilder() {
 		this.tag.put(SPAWN_DATA, this.baseEntity.getTag());
@@ -132,9 +133,9 @@ public class SpawnerBuilder {
 	 * Sets the additional NBT data for the first mob spawned (or all, if potentials are not set).
 	 * @param data An entity, written to NBT, in the format read by AnvilChunkLoader.readWorldEntity()
 	 */
-	public SpawnerBuilder setSpawnData(CompoundNBT data) {
+	public SpawnerBuilder setSpawnData(CompoundTag data) {
 		if (data == null) {
-			data = new CompoundNBT();
+			data = new CompoundTag();
 			data.putString(ID, "minecraft:pig");
 		}
 		this.baseEntity.tag = data.copy();
@@ -144,11 +145,11 @@ public class SpawnerBuilder {
 	/*
 	 * Sets the list of entities the mob spawner will choose from.
 	 */
-	public SpawnerBuilder setPotentials(WeightedSpawnerEntity... entries) {
+	public SpawnerBuilder setPotentials(SpawnData... entries) {
 		this.hasPotentials = true;
-		this.tag.put(SPAWN_POTENTIALS, new ListNBT());
-		ListNBT list = this.tag.getList(SPAWN_POTENTIALS, 10);
-		for (WeightedSpawnerEntity e : entries)
+		this.tag.put(SPAWN_POTENTIALS, new ListTag());
+		ListTag list = this.tag.getList(SPAWN_POTENTIALS, 10);
+		for (SpawnData e : entries)
 			list.add(e.save());
 		return this;
 	}
@@ -156,10 +157,10 @@ public class SpawnerBuilder {
 	/*
 	 * Adds to the list of entities the mob spawner will choose from.
 	 */
-	public SpawnerBuilder addPotentials(WeightedSpawnerEntity... entries) {
+	public SpawnerBuilder addPotentials(SpawnData... entries) {
 		this.hasPotentials = true;
-		ListNBT list = this.tag.getList(SPAWN_POTENTIALS, 10);
-		for (WeightedSpawnerEntity e : entries)
+		ListTag list = this.tag.getList(SPAWN_POTENTIALS, 10);
+		for (SpawnData e : entries)
 			list.add(e.save());
 		return this;
 	}
@@ -167,24 +168,23 @@ public class SpawnerBuilder {
 	/**
 	 * @return The spawn data, represented as an entity nbt tag.
 	 */
-	public CompoundNBT getSpawnData() {
+	public CompoundTag getSpawnData() {
 		return this.tag.getCompound(SPAWN_DATA);
 	}
 
 	/**
 	 * @return The spawn data, represented as an entity nbt tag.
 	 */
-	public ListNBT getPotentials() {
+	public ListTag getPotentials() {
 		return this.tag.getList(SPAWN_POTENTIALS, 10);
 	}
 
-	public void build(IWorld world, BlockPos pos) {
+	public void build(LevelAccessor world, BlockPos pos) {
 		BlockState blockState = world.getBlockState(pos);
 		if (blockState.getBlock() != Blocks.SPAWNER) {
 			world.setBlock(pos, Blocks.SPAWNER.defaultBlockState(), 2);
 		}
-		TileEntity s = world.getBlockEntity(pos);
-		s.load(blockState, this.tag);
-		s.setPosition(pos);
+		BlockEntity s = world.getBlockEntity(pos);
+		s.load(this.tag);
 	}
 }

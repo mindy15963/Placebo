@@ -2,22 +2,22 @@ package shadows.placebo.util;
 
 import java.util.Arrays;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.inventory.EquipmentSlotType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.DoubleNBT;
-import net.minecraft.nbt.FloatNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.potion.Effect;
-import net.minecraft.potion.EffectInstance;
-import net.minecraft.potion.Effects;
-import net.minecraft.potion.PotionUtils;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.FloatTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.item.alchemy.PotionUtils;
 
 /**
  * Util class to manipulate entities before they are spawned.
@@ -38,7 +38,7 @@ public class TagBuilder {
 	public static final String ENTITY_FIRE = "Fire";
 	public static final String ARROW_PICKUP = "pickup";
 	public static final String ARROW_DAMAGE = "damage";
-	public static final CompoundNBT ARROW = getDefaultTag(EntityType.ARROW);
+	public static final CompoundTag ARROW = getDefaultTag(EntityType.ARROW);
 	public static final String EFFECTS = "ActiveEffects";
 	public static final String TIME = "Time";
 	public static final String DROP_ITEM = "DropItem";
@@ -46,14 +46,14 @@ public class TagBuilder {
 	public static final String FALL_HURT_AMOUNT = "FallHurtAmount";
 	public static final String FALL_HURT_MAX = "FallHurtMax";
 	public static final String TILE_ENTITY_DATA = "TileEntityData";
-	public static final CompoundNBT TNT = getDefaultTag(EntityType.TNT);
+	public static final CompoundTag TNT = getDefaultTag(EntityType.TNT);
 	public static final String FUSE = "Fuse";
 
 	/**
 	 * Creates a tag that will spawn this entity, with all default values.
 	 */
-	public static CompoundNBT getDefaultTag(EntityType<? extends Entity> entity) {
-		CompoundNBT tag = new CompoundNBT();
+	public static CompoundTag getDefaultTag(EntityType<? extends Entity> entity) {
+		CompoundTag tag = new CompoundTag();
 		tag.putString(SpawnerBuilder.ID, entity.getRegistryName().toString());
 		return tag;
 	}
@@ -61,7 +61,7 @@ public class TagBuilder {
 	/**
 	 * Sets this entity's hp.
 	 */
-	public static CompoundNBT setHealth(CompoundNBT entity, float health) {
+	public static CompoundTag setHealth(CompoundTag entity, float health) {
 		entity.putFloat(HEALTH, health);
 		return entity;
 	}
@@ -69,7 +69,7 @@ public class TagBuilder {
 	/**
 	 * Tells this entity to not despawn naturally.
 	 */
-	public static CompoundNBT setPersistent(CompoundNBT entity, boolean persistent) {
+	public static CompoundTag setPersistent(CompoundTag entity, boolean persistent) {
 		entity.putBoolean(PERSISTENT, persistent);
 		return entity;
 	}
@@ -79,22 +79,22 @@ public class TagBuilder {
 	 * @param tag The entity tag, created by {@link Entity#writeToNBT}
 	 * @param equipment Stacks to represent the equipment, in the order of EntityEquipmentSlot
 	 */
-	public static CompoundNBT setEquipment(CompoundNBT entity, ItemStack... equipment) {
+	public static CompoundTag setEquipment(CompoundTag entity, ItemStack... equipment) {
 		ItemStack[] stacks = fixStacks(equipment);
-		ListNBT tagListHands = new ListNBT();
+		ListTag tagListHands = new ListTag();
 		for (int i = 0; i < 2; i++)
-			tagListHands.add(new CompoundNBT());
+			tagListHands.add(new CompoundTag());
 
-		ListNBT tagListArmor = new ListNBT();
+		ListTag tagListArmor = new ListTag();
 		for (int i = 0; i < 4; i++)
-			tagListArmor.add(new CompoundNBT());
+			tagListArmor.add(new CompoundTag());
 
-		for (EquipmentSlotType s : EquipmentSlotType.values()) {
+		for (EquipmentSlot s : EquipmentSlot.values()) {
 			ItemStack stack = stacks[s.ordinal()];
-			if (s.getType() == EquipmentSlotType.Group.HAND && !stack.isEmpty()) {
-				tagListHands.set(s.getIndex(), stack.save(new CompoundNBT()));
+			if (s.getType() == EquipmentSlot.Type.HAND && !stack.isEmpty()) {
+				tagListHands.set(s.getIndex(), stack.save(new CompoundTag()));
 			} else if (!stack.isEmpty()) {
-				tagListArmor.set(s.getIndex(), stack.save(new CompoundNBT()));
+				tagListArmor.set(s.getIndex(), stack.save(new CompoundTag()));
 			}
 		}
 
@@ -115,14 +115,14 @@ public class TagBuilder {
 	 * @param tag The entity tag, created by {@link Entity#writeToNBT}
 	 * @param chances Drop chances for each slot, in the order of EntityEquipmentSlot.  If a chance is above 1, that slot can drop without requiring player damage.
 	 */
-	public static CompoundNBT setDropChances(CompoundNBT entity, float... chances) {
+	public static CompoundTag setDropChances(CompoundTag entity, float... chances) {
 		float[] fixed = fixChances(chances);
-		ListNBT tagListHands = new ListNBT();
-		ListNBT tagListArmor = new ListNBT();
+		ListTag tagListHands = new ListTag();
+		ListTag tagListArmor = new ListTag();
 
-		for (EquipmentSlotType s : EquipmentSlotType.values()) {
-			FloatNBT chance = FloatNBT.valueOf(fixed[s.ordinal()]);
-			if (s.getType() == EquipmentSlotType.Group.HAND) {
+		for (EquipmentSlot s : EquipmentSlot.values()) {
+			FloatTag chance = FloatTag.valueOf(fixed[s.ordinal()]);
+			if (s.getType() == EquipmentSlot.Type.HAND) {
 				tagListHands.set(s.getIndex(), chance);
 			} else tagListArmor.set(s.getIndex(), chance);
 
@@ -143,7 +143,7 @@ public class TagBuilder {
 	/**
 	 * Sets this entity to spawn with a given offset from the spawner, instead of using random coordinates.
 	 */
-	public static CompoundNBT setOffset(CompoundNBT entity, double x, double y, double z) {
+	public static CompoundTag setOffset(CompoundTag entity, double x, double y, double z) {
 		entity.put(OFFSET, doubleTagList(x, y, z));
 		return entity;
 	}
@@ -151,7 +151,7 @@ public class TagBuilder {
 	/**
 	 * Sets the motion of an entity.
 	 */
-	public static CompoundNBT setMotion(CompoundNBT entity, double x, double y, double z) {
+	public static CompoundTag setMotion(CompoundTag entity, double x, double y, double z) {
 		entity.put(MOTION, doubleTagList(x, y, z));
 		return entity;
 	}
@@ -159,53 +159,53 @@ public class TagBuilder {
 	/**
 	 * Sets fireball motion, because fireballs are stupid and use their own key.
 	 */
-	public static CompoundNBT setFireballMotion(CompoundNBT entity, double x, double y, double z) {
+	public static CompoundTag setFireballMotion(CompoundTag entity, double x, double y, double z) {
 		entity.put(DIRECTION, doubleTagList(x, y, z));
 		return entity;
 	}
 
-	public static ListNBT doubleTagList(double... data) {
-		ListNBT tagList = new ListNBT();
+	public static ListTag doubleTagList(double... data) {
+		ListTag tagList = new ListTag();
 		for (double d : data)
-			tagList.add(DoubleNBT.valueOf(d));
+			tagList.add(DoubleTag.valueOf(d));
 		return tagList;
 	}
 
 	/**
 	 * Adds a potion effect to the stack and returns it.
 	 */
-	public static ItemStack addPotionEffect(ItemStack stack, Effect potion, int duration, int amplifier) {
-		return PotionUtils.setCustomEffects(stack, Arrays.asList(new EffectInstance(potion, duration, amplifier)));
+	public static ItemStack addPotionEffect(ItemStack stack, MobEffect potion, int duration, int amplifier) {
+		return PotionUtils.setCustomEffects(stack, Arrays.asList(new MobEffectInstance(potion, duration, amplifier)));
 	}
 
 	/**
 	 * Adds a potion effect to this entity.
 	 */
-	public static void addPotionEffect(CompoundNBT tag, Effect potion, int amplifier) {
+	public static void addPotionEffect(CompoundTag tag, MobEffect potion, int amplifier) {
 		TagBuilder.addPotionEffect(tag, potion, Integer.MAX_VALUE, amplifier, false);
 	}
 
 	/**
 	 * Adds a potion effect to this entity.
 	 */
-	public static void addPotionEffect(CompoundNBT tag, Effect potion, int amplifier, boolean showParticles) {
+	public static void addPotionEffect(CompoundTag tag, MobEffect potion, int amplifier, boolean showParticles) {
 		TagBuilder.addPotionEffect(tag, potion, Integer.MAX_VALUE, amplifier, showParticles);
 	}
 
 	/**
 	 * Adds a potion effect to this entity.
 	 */
-	public static void addPotionEffect(CompoundNBT tag, Effect potion, int duration, int amplifier) {
+	public static void addPotionEffect(CompoundTag tag, MobEffect potion, int duration, int amplifier) {
 		TagBuilder.addPotionEffect(tag, potion, duration, amplifier, false);
 	}
 
 	/**
 	 * Adds a potion effect to this entity.
 	 */
-	public static CompoundNBT addPotionEffect(CompoundNBT entity, Effect potion, int duration, int amplifier, boolean showParticles) {
-		ListNBT effects = entity.getList(EFFECTS, 10);
-		EffectInstance fx = new EffectInstance(potion, duration, amplifier, false, showParticles);
-		effects.add(fx.save(new CompoundNBT()));
+	public static CompoundTag addPotionEffect(CompoundTag entity, MobEffect potion, int duration, int amplifier, boolean showParticles) {
+		ListTag effects = entity.getList(EFFECTS, 10);
+		MobEffectInstance fx = new MobEffectInstance(potion, duration, amplifier, false, showParticles);
+		effects.add(fx.save(new CompoundTag()));
 		entity.put(EFFECTS, effects);
 		return entity;
 	}
@@ -213,14 +213,14 @@ public class TagBuilder {
 	/**
 	 * Makes a falling block tag.
 	 */
-	public static CompoundNBT fallingBlock(BlockState state, int time) {
+	public static CompoundTag fallingBlock(BlockState state, int time) {
 		return TagBuilder.fallingBlock(state, time, false, 2, 40, false, null);
 	}
 
 	/**
 	 * Makes a falling block tag.
 	 */
-	public static CompoundNBT fallingBlock(BlockState state, int time, float fallDamage) {
+	public static CompoundTag fallingBlock(BlockState state, int time, float fallDamage) {
 		return TagBuilder.fallingBlock(state, time, true, fallDamage, 40, false, null);
 	}
 
@@ -235,9 +235,9 @@ public class TagBuilder {
 	 * @param tileData Tile entity data, to be set if we hit the ground/
 	 * @return An CompoundNBT containing a falling block.
 	 */
-	public static CompoundNBT fallingBlock(BlockState state, int time, boolean hurtEntities, float fallDamage, int maxFallDamage, boolean dropItem, CompoundNBT tileData) {
-		CompoundNBT tag = getDefaultTag(EntityType.FALLING_BLOCK);
-		tag.put("BlockState", NBTUtil.writeBlockState(state));
+	public static CompoundTag fallingBlock(BlockState state, int time, boolean hurtEntities, float fallDamage, int maxFallDamage, boolean dropItem, CompoundTag tileData) {
+		CompoundTag tag = getDefaultTag(EntityType.FALLING_BLOCK);
+		tag.put("BlockState", NbtUtils.writeBlockState(state));
 		tag.putInt(TIME, time);
 		tag.putBoolean(DROP_ITEM, dropItem);
 		tag.putBoolean(HURT_ENTITIES, hurtEntities);
@@ -252,10 +252,10 @@ public class TagBuilder {
 	 * @param tag An entity written to NBT.
 	 * @return The provided entity, now with TNT on it's head.
 	 */
-	public static CompoundNBT applyTNTHat(CompoundNBT tag) {
+	public static CompoundTag applyTNTHat(CompoundTag tag) {
 		TagBuilder.setMotion(tag, 0.0, 0.3, 0.0);
-		TagBuilder.addPotionEffect(tag, Effects.MOVEMENT_SPEED, 1);
-		TagBuilder.addPotionEffect(tag, Effects.DAMAGE_RESISTANCE, -6);
+		TagBuilder.addPotionEffect(tag, MobEffects.MOVEMENT_SPEED, 1);
+		TagBuilder.addPotionEffect(tag, MobEffects.DAMAGE_RESISTANCE, -6);
 		addPassengers(tag, TNT.copy());
 		return tag;
 	}
@@ -263,10 +263,10 @@ public class TagBuilder {
 	/**
 	 * Sets the provided passengers to ride on the given entity.
 	 */
-	public static CompoundNBT addPassengers(CompoundNBT entity, CompoundNBT... passengers) {
-		ListNBT list = entity.getList(PASSENGERS, 10);
+	public static CompoundTag addPassengers(CompoundTag entity, CompoundTag... passengers) {
+		ListTag list = entity.getList(PASSENGERS, 10);
 		if (list.isEmpty()) entity.put(PASSENGERS, list);
-		for (CompoundNBT nbt : passengers)
+		for (CompoundTag nbt : passengers)
 			list.add(nbt);
 		return entity;
 	}
@@ -274,18 +274,18 @@ public class TagBuilder {
 	/**
 	 * Forcibly gives skeletons bows.
 	 */
-	public static CompoundNBT checkForSkeleton(CompoundNBT entity) {
+	public static CompoundTag checkForSkeleton(CompoundTag entity) {
 		if (entity.getString(SpawnerBuilder.ID).contains("skeleton")) {
 			TagBuilder.setEquipment(entity, new ItemStack(Items.BOW));
 		}
 		return entity;
 	}
 
-	public static CompoundNBT checkForCreeper(CompoundNBT entity) {
+	public static CompoundTag checkForCreeper(CompoundTag entity) {
 		if (entity.getString(SpawnerBuilder.ID).contains("creeper")) {
-			ListNBT effects = entity.getList(EFFECTS, 10);
-			for (INBT nbt : effects) {
-				((CompoundNBT) nbt).putInt("Duration", 300);
+			ListTag effects = entity.getList(EFFECTS, 10);
+			for (Tag nbt : effects) {
+				((CompoundTag) nbt).putInt("Duration", 300);
 			}
 			return entity;
 		}

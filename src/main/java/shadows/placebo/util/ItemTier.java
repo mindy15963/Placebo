@@ -1,9 +1,9 @@
 package shadows.placebo.util;
 
-import net.minecraft.item.IItemTier;
-import net.minecraft.item.crafting.Ingredient;
+import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.crafting.Ingredient;
 
-public class ItemTier implements IItemTier {
+public class ItemTier implements Tier {
 
 	protected int durability, level, enchantability;
 	protected float efficiency, damage;

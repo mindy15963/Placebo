@@ -2,8 +2,8 @@ package shadows.placebo.net;
 
 import java.util.function.Supplier;
 
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent.Context;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fmllegacy.network.NetworkEvent.Context;
 import shadows.placebo.util.NetworkUtils;
 import shadows.placebo.util.NetworkUtils.MessageProvider;
 
@@ -25,12 +25,12 @@ public class MessageButtonClick extends MessageProvider<MessageButtonClick> {
 	}
 
 	@Override
-	public MessageButtonClick read(PacketBuffer buf) {
+	public MessageButtonClick read(FriendlyByteBuf buf) {
 		return new MessageButtonClick(buf.readInt());
 	}
 
 	@Override
-	public void write(MessageButtonClick msg, PacketBuffer buf) {
+	public void write(MessageButtonClick msg, FriendlyByteBuf buf) {
 		buf.writeInt(msg.button);
 	}
 

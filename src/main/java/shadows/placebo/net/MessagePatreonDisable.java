@@ -4,10 +4,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkDirection;
-import net.minecraftforge.fml.network.NetworkEvent.Context;
-import net.minecraftforge.fml.network.PacketDistributor;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.fmllegacy.network.NetworkDirection;
+import net.minecraftforge.fmllegacy.network.NetworkEvent.Context;
+import net.minecraftforge.fmllegacy.network.PacketDistributor;
 import shadows.placebo.Placebo;
 import shadows.placebo.patreon.TrailsManager;
 import shadows.placebo.patreon.WingsManager;
@@ -29,14 +29,14 @@ public class MessagePatreonDisable extends MessageProvider<MessagePatreonDisable
 	}
 
 	@Override
-	public void write(MessagePatreonDisable msg, PacketBuffer buf) {
+	public void write(MessagePatreonDisable msg, FriendlyByteBuf buf) {
 		buf.writeByte(msg.type);
 		buf.writeByte(msg.id == null ? 0 : 1);
 		if (msg.id != null) buf.writeUUID(msg.id);
 	}
 
 	@Override
-	public MessagePatreonDisable read(PacketBuffer buf) {
+	public MessagePatreonDisable read(FriendlyByteBuf buf) {
 		int type = buf.readByte();
 		if (buf.readByte() == 1) {
 			return new MessagePatreonDisable(type, buf.readUUID());

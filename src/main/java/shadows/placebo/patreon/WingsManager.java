@@ -12,37 +12,39 @@ import java.util.UUID;
 
 import org.lwjgl.glfw.GLFW;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.model.geom.ModelLayerLocation;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.client.event.EntityRenderersEvent.AddLayers;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent.ClientTickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fmlclient.registry.ClientRegistry;
 import shadows.placebo.Placebo;
 import shadows.placebo.net.MessagePatreonDisable;
 import shadows.placebo.patreon.PatreonUtils.WingType;
+import shadows.placebo.patreon.wings.Wing;
 import shadows.placebo.patreon.wings.WingLayer;
 
 @EventBusSubscriber(bus = Bus.MOD, modid = Placebo.MODID, value = Dist.CLIENT)
 public class WingsManager {
 
 	private static Map<UUID, WingType> WINGS = new HashMap<>();
-
-	public static final KeyBinding TOGGLE = new KeyBinding("placebo.toggleWings", GLFW.GLFW_KEY_KP_8, "key.categories.placebo");
-
+	public static final KeyMapping TOGGLE = new KeyMapping("placebo.toggleWings", GLFW.GLFW_KEY_KP_8, "key.categories.placebo");
 	public static final Set<UUID> DISABLED = new HashSet<>();
+	public static final ModelLayerLocation WING_LOC = new ModelLayerLocation(new ResourceLocation(Placebo.MODID, "wings"), "main");
 
 	@SubscribeEvent
 	public static void init(FMLClientSetupEvent e) {
 		ClientRegistry.registerKeyBinding(TOGGLE);
 		e.enqueueWork(() -> {
-			Minecraft.getInstance().getEntityRenderDispatcher().getSkinMap().values().forEach(r -> {
-				r.addLayer(new WingLayer(r));
-			});
+			ForgeHooksClient.registerLayerDefinition(WING_LOC, Wing::createLayer);
 		});
 		new Thread(() -> {
 			Placebo.LOGGER.info("Loading patreon wing data...");
@@ -69,6 +71,14 @@ public class WingsManager {
 			Placebo.LOGGER.info("Loaded {} patreon wings.", WINGS.size());
 			if (WINGS.size() > 0) MinecraftForge.EVENT_BUS.addListener(WingsManager::clientTick);
 		}, "Placebo Patreon Wing Loader").start();
+	}
+
+	@SubscribeEvent
+	public static void layers(AddLayers e) {
+		e.getSkins().stream().map(e::getSkin).forEach(r -> {
+			((PlayerRenderer) r).addLayer(new WingLayer((PlayerRenderer) r));
+		});
+		Wing.INSTANCE = new Wing(e.getEntityModels().bakeLayer(WING_LOC));
 	}
 
 	public static void clientTick(ClientTickEvent e) {
